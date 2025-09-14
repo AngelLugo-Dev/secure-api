@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Seguridad IoT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      .dot {
+        height: 12px;
+        width: 12px;
+        background-color: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+      <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+        Sistema de Seguridad IoT
+      </h1>
+
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">
+          Administración de Dispositivos
+        </h2>
+        <form
+          id="deviceForm"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          <input
+            type="text"
+            id="nombre"
+            placeholder="Nombre"
+            required
+            class="p-2 border rounded"
+          />
+          <select id="tipo_dispositivo" class="p-2 border rounded" required>
+            <option value="">Seleccione tipo</option>
+            <option value="presencia">Sensor de Presencia</option>
+            <option value="puerta">Sensor de Puerta</option>
+            <option value="actuador">Actuador</option>
+          </select>
+          <select id="ubicacion" class="p-2 border rounded" required>
+            <option value="">Seleccione ubicación</option>
+            <option value="entrada_frontal">Entrada Frontal</option>
+            <option value="entrada_trasera">Entrada Trasera</option>
+          </select>
+          <button
+            type="submit"
+            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-1 md:col-span-3"
+          >
+            Agregar Dispositivo
+          </button>
+        </form>
+
+        <div id="deviceList" class="mt-6 space-y-4"></div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Control del Actuador</h2>
+        <div class="flex space-x-4">
+          <button
+            onclick="controlActuador('cerrar')"
+            class="bg-indigo-500 text-white p-2 rounded hover:bg-indigo-600"
+          >
+            Cerrar Puerta
+          </button>
+          <button
+            onclick="controlActuador('abrir')"
+            class="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+          >
+            Abrir Puerta
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Estado y Monitoreo</h2>
+
+        <div
+          id="statusGrid"
+          class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        ></div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr class="bg-gray-100 text-gray-600 text-sm leading-normal">
+                <th class="py-3 px-6 text-left">Dispositivo</th>
+                <th class="py-3 px-6 text-left">Estado</th>
+                <th class="py-3 px-6 text-left">Última Actualización</th>
+              </tr>
+            </thead>
+            <tbody
+              id="statusTableBody"
+              class="text-gray-600 text-sm font-light"
+            ></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="./src/script.js"></script>
+  </body>
+</html>
