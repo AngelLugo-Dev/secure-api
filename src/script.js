@@ -6,6 +6,12 @@ const statusGrid = document.getElementById("statusGrid");
 const statusTableBody = document.getElementById("statusTableBody");
 const actuatorControls = document.getElementById("actuatorControls");
 
+// Función para generar una IP aleatoria (simulando Faker.js)
+function generateRandomIP() {
+  const octet = () => Math.floor(Math.random() * 256);
+  return `${octet()}.${octet()}.${octet()}.${octet()}`;
+}
+
 // Funciones para interactuar con la API
 // ---
 // CRUD: CREAR dispositivo
@@ -80,8 +86,8 @@ async function renderDeviceList() {
       "flex justify-between items-center p-4 bg-gray-50 rounded-lg shadow-sm";
     div.innerHTML = `
         <div>
-            <p class="font-semibold">${device.nombre}</p>
-            <p class="text-sm text-gray-500">${device.tipo_dispositivo} en ${device.ubicacion}</p>
+            <p class="font-semibold">${device.ubicacion}</p>
+            <p class="text-sm text-gray-500">${device.tipo_dispositivo}</p>
         </div>
         <div>
             <button onclick="handleDelete('${device.id}')" class="bg-red-500 text-white p-2 rounded text-xs hover:bg-red-600">Borrar</button>
@@ -118,7 +124,7 @@ async function renderStatusGrid() {
     card.innerHTML = `
         <div class="flex items-center">
             <span class="dot ${statusColor}"></span>
-            <span class="ml-3 font-medium">${device.nombre}</span>
+            <span class="ml-3 font-medium">${device.ubicacion}</span>
         </div>
         <p class="text-sm font-bold text-gray-600">${statusText}</p>
     `;
@@ -141,12 +147,15 @@ async function renderStatusTable() {
     const row = document.createElement("tr");
     row.className = "hover:bg-gray-50 border-b";
     row.innerHTML = `
-        <td class="py-3 px-6 text-left">${device.nombre}</td>
-        <td class="py-3 px-6 text-left">${device.estado}</td>
-        <td class="py-3 px-6 text-left">${new Date(
-          device.timestamp
-        ).toLocaleString()}</td>
-    `;
+            <td class="py-3 px-6 text-left">${device.ubicacion} (${
+      device.tipo_dispositivo
+    })</td>
+            <td class="py-3 px-6 text-left">${device.estado}</td>
+            <td class="py-3 px-6 text-left">${new Date(
+              device.timestamp
+            ).toLocaleString()}</td>
+            <td class="py-3 px-6 text-left">${device.ip || "N/A"}</td>
+        `;
     statusTableBody.appendChild(row);
   });
 }
@@ -175,7 +184,7 @@ async function renderActuatorControls() {
     controlDiv.className =
       "flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-sm";
     controlDiv.innerHTML = `
-        <p class="font-semibold mb-2">${actuator.nombre} (${actuator.ubicacion})</p>
+        <p class="font-semibold mb-2">${actuator.ubicacion} (${actuator.tipo_dispositivo})</p>
         <button onclick="controlActuador('${actuator.id}', '${nuevoEstado}')" class="${botonColor} text-white p-2 rounded hover:bg-opacity-80 transition-opacity w-full">
             ${botonTexto}
         </button>
@@ -189,12 +198,10 @@ async function renderActuatorControls() {
 // Maneja el envío del formulario para crear un nuevo dispositivo
 deviceForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const nombre = document.getElementById("nombre").value;
   const tipo_dispositivo = document.getElementById("tipo_dispositivo").value;
   const ubicacion = document.getElementById("ubicacion").value;
 
   const newDeviceData = {
-    nombre,
     tipo_dispositivo,
     ubicacion,
     comando: tipo_dispositivo === "actuador" ? "cerrar" : "",
@@ -205,10 +212,11 @@ deviceForm.addEventListener("submit", async (e) => {
         ? "cerrada"
         : "cerrada",
     timestamp: new Date().toISOString(),
+    ip: generateRandomIP(),
   };
 
   await createDevice(newDeviceData);
-  await renderDeviceList(); // Asegura que la lista y los controles se actualicen
+  await renderDeviceList();
   deviceForm.reset();
 });
 
@@ -237,7 +245,7 @@ window.onload = async () => {
   }, 2000);
 };
 
-// Funciones de control del actuador (MODIFICADA)
+// Funciones de control del actuador (MODIFICADA para la dependencia del sensor)
 async function controlActuador(actuatorId, accion) {
   const devices = await getDevices();
   const actuator = devices.find((d) => d.id === actuatorId);
@@ -262,7 +270,9 @@ async function controlActuador(actuatorId, accion) {
         timestamp: new Date().toISOString(),
       });
     } else {
-      alert(`No se encontró un sensor de puerta para la ${ubicacion}.`);
+      alert(
+        `No se encontró un sensor de puerta para la ${ubicacion}. La acción no se puede realizar.`
+      );
     }
   }
 }

@@ -33,27 +33,27 @@
           id="deviceForm"
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          <input
-            type="text"
-            id="nombre"
-            placeholder="Nombre"
+          <select
+            id="tipo_dispositivo"
+            class="p-2 border rounded col-span-1 md:col-span-1"
             required
-            class="p-2 border rounded"
-          />
-          <select id="tipo_dispositivo" class="p-2 border rounded" required>
+          >
             <option value="">Seleccione tipo</option>
             <option value="presencia">Sensor de Presencia</option>
             <option value="puerta">Sensor de Puerta</option>
             <option value="actuador">Actuador</option>
           </select>
-          <select id="ubicacion" class="p-2 border rounded" required>
-            <option value="">Seleccione ubicación</option>
-            <option value="entrada_frontal">Entrada Frontal</option>
-            <option value="entrada_trasera">Entrada Trasera</option>
-          </select>
+          <input
+            type="text"
+            id="ubicacion"
+            placeholder="Ubicación (ej. Entrada principal)"
+            required
+            class="p-2 border rounded col-span-1 md:col-span-1"
+          />
+
           <button
             type="submit"
-            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-1 md:col-span-3"
+            class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-1 md:col-span-1"
           >
             Agregar Dispositivo
           </button>
@@ -85,6 +85,7 @@
                 <th class="py-3 px-6 text-left">Dispositivo</th>
                 <th class="py-3 px-6 text-left">Estado</th>
                 <th class="py-3 px-6 text-left">Última Actualización</th>
+                <th class="py-3 px-6 text-left">IP</th>
               </tr>
             </thead>
             <tbody
