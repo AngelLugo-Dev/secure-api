@@ -78,14 +78,14 @@ async function renderDeviceList() {
     div.className =
       "flex justify-between items-center p-4 bg-gray-50 rounded-lg shadow-sm";
     div.innerHTML = `
-            <div>
-                <p class="font-semibold">${device.nombre}</p>
-                <p class="text-sm text-gray-500">${device.tipo_dispositivo} en ${device.ubicacion}</p>
-            </div>
-            <div>
-                <button onclick="handleDelete('${device.id}')" class="bg-red-500 text-white p-2 rounded text-xs hover:bg-red-600">Borrar</button>
-            </div>
-        `;
+        <div>
+            <p class="font-semibold">${device.nombre}</p>
+            <p class="text-sm text-gray-500">${device.tipo_dispositivo} en ${device.ubicacion}</p>
+        </div>
+        <div>
+            <button onclick="handleDelete('${device.id}')" class="bg-red-500 text-white p-2 rounded text-xs hover:bg-red-600">Borrar</button>
+        </div>
+    `;
     deviceList.appendChild(div);
   });
 }
@@ -114,12 +114,12 @@ async function renderStatusGrid() {
     card.className =
       "bg-white p-4 rounded-lg shadow-md flex items-center justify-between";
     card.innerHTML = `
-            <div class="flex items-center">
-                <span class="dot ${statusColor}"></span>
-                <span class="ml-3 font-medium">${device.nombre}</span>
-            </div>
-            <p class="text-sm font-bold text-gray-600">${statusText}</p>
-        `;
+        <div class="flex items-center">
+            <span class="dot ${statusColor}"></span>
+            <span class="ml-3 font-medium">${device.nombre}</span>
+        </div>
+        <p class="text-sm font-bold text-gray-600">${statusText}</p>
+    `;
     statusGrid.appendChild(card);
   });
 }
@@ -139,12 +139,12 @@ async function renderStatusTable() {
     const row = document.createElement("tr");
     row.className = "hover:bg-gray-50 border-b";
     row.innerHTML = `
-            <td class="py-3 px-6 text-left">${device.nombre}</td>
-            <td class="py-3 px-6 text-left">${device.estado}</td>
-            <td class="py-3 px-6 text-left">${new Date(
-              device.timestamp
-            ).toLocaleString()}</td>
-        `;
+        <td class="py-3 px-6 text-left">${device.nombre}</td>
+        <td class="py-3 px-6 text-left">${device.estado}</td>
+        <td class="py-3 px-6 text-left">${new Date(
+          device.timestamp
+        ).toLocaleString()}</td>
+    `;
     statusTableBody.appendChild(row);
   });
 }
@@ -222,3 +222,34 @@ async function controlActuador(accion) {
     }
   }
 }
+
+// ---
+// Función para simular un cambio de estado en un sensor
+async function simularCambioEstado() {
+  // Encuentra los sensores de puerta existentes
+  const devices = await getDevices();
+  const sensoresPuerta = devices.filter((d) => d.tipo_dispositivo === "puerta");
+
+  if (sensoresPuerta.length > 0) {
+    // Selecciona un sensor al azar para simular el cambio
+    const sensor =
+      sensoresPuerta[Math.floor(Math.random() * sensoresPuerta.length)];
+
+    // Determina el nuevo estado de forma aleatoria
+    const nuevoEstado = sensor.estado === "cerrada" ? "abierta" : "cerrada";
+
+    console.log(
+      `Simulando cambio de estado en ${sensor.nombre} (${sensor.ubicacion}) a ${nuevoEstado}...`
+    );
+
+    await updateDevice(sensor.id, {
+      estado: nuevoEstado,
+      timestamp: new Date().toISOString(),
+    });
+  } else {
+    console.log("No hay sensores de puerta para simular un cambio.");
+  }
+}
+
+// Puedes ejecutar esta función manualmente en la consola del navegador para ver la actualización
+// o agregar un botón en el HTML que llame a `simularCambioEstado()`
