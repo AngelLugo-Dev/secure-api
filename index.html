@@ -63,21 +63,11 @@
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-semibold mb-4">Control del Actuador</h2>
-        <div class="flex space-x-4">
-          <button
-            onclick="controlActuador('cerrar')"
-            class="bg-indigo-500 text-white p-2 rounded hover:bg-indigo-600"
-          >
-            Cerrar Puerta
-          </button>
-          <button
-            onclick="controlActuador('abrir')"
-            class="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-          >
-            Abrir Puerta
-          </button>
-        </div>
+        <h2 class="text-xl font-semibold mb-4">Control de Actuadores</h2>
+        <div
+          id="actuatorControls"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
+        ></div>
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-6">

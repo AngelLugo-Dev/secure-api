@@ -4,6 +4,7 @@ const deviceForm = document.getElementById("deviceForm");
 const deviceList = document.getElementById("deviceList");
 const statusGrid = document.getElementById("statusGrid");
 const statusTableBody = document.getElementById("statusTableBody");
+const actuatorControls = document.getElementById("actuatorControls");
 
 // Funciones para interactuar con la API
 // ---
@@ -88,6 +89,7 @@ async function renderDeviceList() {
     `;
     deviceList.appendChild(div);
   });
+  renderActuatorControls();
 }
 
 // Renderiza el estado gráfico de los dispositivos
@@ -149,6 +151,39 @@ async function renderStatusTable() {
   });
 }
 
+// NUEVA FUNCIÓN: Renderiza los controles de los actuadores
+async function renderActuatorControls() {
+  const devices = await getDevices();
+  const actuators = devices.filter((d) => d.tipo_dispositivo === "actuador");
+  actuatorControls.innerHTML = "";
+
+  if (actuators.length === 0) {
+    actuatorControls.innerHTML =
+      '<p class="text-gray-500">No hay actuadores registrados.</p>';
+    return;
+  }
+
+  actuators.forEach((actuator) => {
+    const estadoActual = actuator.estado;
+    const nuevoEstado = estadoActual === "cerrada" ? "abrir" : "cerrar";
+    const botonColor =
+      estadoActual === "cerrada" ? "bg-red-500" : "bg-green-500";
+    const botonTexto =
+      estadoActual === "cerrada" ? "Abrir Puerta" : "Cerrar Puerta";
+
+    const controlDiv = document.createElement("div");
+    controlDiv.className =
+      "flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-sm";
+    controlDiv.innerHTML = `
+        <p class="font-semibold mb-2">${actuator.nombre} (${actuator.ubicacion})</p>
+        <button onclick="controlActuador('${actuator.id}', '${nuevoEstado}')" class="${botonColor} text-white p-2 rounded hover:bg-opacity-80 transition-opacity w-full">
+            ${botonTexto}
+        </button>
+    `;
+    actuatorControls.appendChild(controlDiv);
+  });
+}
+
 // Manejadores de eventos
 // ---
 // Maneja el envío del formulario para crear un nuevo dispositivo
@@ -173,7 +208,7 @@ deviceForm.addEventListener("submit", async (e) => {
   };
 
   await createDevice(newDeviceData);
-  await renderDeviceList();
+  await renderDeviceList(); // Asegura que la lista y los controles se actualicen
   deviceForm.reset();
 });
 
@@ -192,70 +227,42 @@ window.onload = async () => {
   await renderDeviceList();
   await renderStatusGrid();
   await renderStatusTable();
+  await renderActuatorControls();
 
   // Configura la tasa de refresco de 2 segundos
   setInterval(async () => {
     await renderStatusGrid();
     await renderStatusTable();
+    await renderActuatorControls();
   }, 2000);
 };
 
-// Funciones de control del actuador
-async function controlActuador(accion) {
-  const ubicacion = prompt(
-    "¿Qué puerta deseas " +
-      (accion === "cerrar" ? "cerrar" : "abrir") +
-      "? (entrada_frontal o entrada_trasera)"
-  );
-  if (ubicacion) {
-    const devices = await getDevices();
-    const actuator = devices.find(
-      (d) => d.tipo_dispositivo === "actuador" && d.ubicacion === ubicacion
-    );
+// Funciones de control del actuador (MODIFICADA)
+async function controlActuador(actuatorId, accion) {
+  const devices = await getDevices();
+  const actuator = devices.find((d) => d.id === actuatorId);
+
+  if (actuator) {
+    const ubicacion = actuator.ubicacion;
     const sensorPuerta = devices.find(
       (d) => d.tipo_dispositivo === "puerta" && d.ubicacion === ubicacion
     );
 
-    if (actuator && sensorPuerta) {
-      // 1. Actualiza el estado del actuador
+    if (sensorPuerta) {
+      // Actualiza el estado del actuador
       await updateDevice(actuator.id, {
         comando: accion,
         estado: accion === "cerrar" ? "cerrada" : "abierta",
         timestamp: new Date().toISOString(),
       });
 
-      // 2. Actualiza el estado del sensor de puerta para sincronizarlo
+      // Sincroniza el estado del sensor de puerta con el actuador
       await updateDevice(sensorPuerta.id, {
         estado: accion === "cerrar" ? "cerrada" : "abierta",
         timestamp: new Date().toISOString(),
       });
     } else {
-      alert(`No se encontró el actuador o el sensor para la ${ubicacion}.`);
+      alert(`No se encontró un sensor de puerta para la ${ubicacion}.`);
     }
-  }
-}
-
-// ---
-// Función para simular un cambio de estado en un sensor
-async function simularCambioEstado() {
-  // Esta función es solo para probar la sincronización de forma manual
-  const devices = await getDevices();
-  const sensoresPuerta = devices.filter((d) => d.tipo_dispositivo === "puerta");
-
-  if (sensoresPuerta.length > 0) {
-    const sensor =
-      sensoresPuerta[Math.floor(Math.random() * sensoresPuerta.length)];
-    const nuevoEstado = sensor.estado === "cerrada" ? "abierta" : "cerrada";
-
-    console.log(
-      `Simulando cambio de estado en ${sensor.nombre} (${sensor.ubicacion}) a ${nuevoEstado}...`
-    );
-
-    await updateDevice(sensor.id, {
-      estado: nuevoEstado,
-      timestamp: new Date().toISOString(),
-    });
-  } else {
-    console.log("No hay sensores de puerta para simular un cambio.");
   }
 }
