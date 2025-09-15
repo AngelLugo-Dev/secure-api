@@ -208,17 +208,29 @@ async function controlActuador(accion) {
       "? (entrada_frontal o entrada_trasera)"
   );
   if (ubicacion) {
-    const actuator = (await getDevices()).find(
+    const devices = await getDevices();
+    const actuator = devices.find(
       (d) => d.tipo_dispositivo === "actuador" && d.ubicacion === ubicacion
     );
-    if (actuator) {
+    const sensorPuerta = devices.find(
+      (d) => d.tipo_dispositivo === "puerta" && d.ubicacion === ubicacion
+    );
+
+    if (actuator && sensorPuerta) {
+      // 1. Actualiza el estado del actuador
       await updateDevice(actuator.id, {
         comando: accion,
         estado: accion === "cerrar" ? "cerrada" : "abierta",
         timestamp: new Date().toISOString(),
       });
+
+      // 2. Actualiza el estado del sensor de puerta para sincronizarlo
+      await updateDevice(sensorPuerta.id, {
+        estado: accion === "cerrar" ? "cerrada" : "abierta",
+        timestamp: new Date().toISOString(),
+      });
     } else {
-      alert(`No se encontró un actuador para la ${ubicacion}.`);
+      alert(`No se encontró el actuador o el sensor para la ${ubicacion}.`);
     }
   }
 }
@@ -226,16 +238,13 @@ async function controlActuador(accion) {
 // ---
 // Función para simular un cambio de estado en un sensor
 async function simularCambioEstado() {
-  // Encuentra los sensores de puerta existentes
+  // Esta función es solo para probar la sincronización de forma manual
   const devices = await getDevices();
   const sensoresPuerta = devices.filter((d) => d.tipo_dispositivo === "puerta");
 
   if (sensoresPuerta.length > 0) {
-    // Selecciona un sensor al azar para simular el cambio
     const sensor =
       sensoresPuerta[Math.floor(Math.random() * sensoresPuerta.length)];
-
-    // Determina el nuevo estado de forma aleatoria
     const nuevoEstado = sensor.estado === "cerrada" ? "abierta" : "cerrada";
 
     console.log(
@@ -250,6 +259,3 @@ async function simularCambioEstado() {
     console.log("No hay sensores de puerta para simular un cambio.");
   }
 }
-
-// Puedes ejecutar esta función manualmente en la consola del navegador para ver la actualización
-// o agregar un botón en el HTML que llame a `simularCambioEstado()`
