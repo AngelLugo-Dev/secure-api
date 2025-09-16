@@ -1,6 +1,8 @@
 // src/monitoreo.js
 
 const API_URL = "https://68bb0de484055bce63f104b3.mockapi.io/api/v1/Proyecto1";
+
+// Selectores para la página de Monitoreo
 const statusGrid = document.getElementById("statusGrid");
 const statusTableBody = document.getElementById("statusTableBody");
 
@@ -20,10 +22,22 @@ async function getDevices() {
 
 // Funciones de renderizado
 async function renderStatusGrid() {
+  if (!statusGrid) return;
   const devices = await getDevices();
   if (!devices) return;
+
+  // Obtener el estado más reciente de cada ubicación
+  const latestStatusByLocation = {};
+  devices
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .forEach((device) => {
+      if (!latestStatusByLocation[device.ubicacion]) {
+        latestStatusByLocation[device.ubicacion] = device;
+      }
+    });
+
   statusGrid.innerHTML = "";
-  devices.forEach((device) => {
+  Object.values(latestStatusByLocation).forEach((device) => {
     let statusColor = "bg-gray-400";
     let statusText = device.estado.toUpperCase();
     if (device.estado === "detectada" || device.estado === "abierta") {
@@ -51,9 +65,11 @@ async function renderStatusGrid() {
 }
 
 async function renderStatusTable() {
+  if (!statusTableBody) return;
   const devices = await getDevices();
   if (!devices) return;
   statusTableBody.innerHTML = "";
+
   const recentUpdates = devices
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10);
@@ -75,12 +91,12 @@ async function renderStatusTable() {
 }
 
 // Carga inicial y refresco
-document.addEventListener("DOMContentLoaded", () => {
-  renderStatusGrid();
-  renderStatusTable();
-  monitorInterval = setInterval(() => {
-    renderStatusGrid();
-    renderStatusTable();
+document.addEventListener("DOMContentLoaded", async () => {
+  await renderStatusGrid();
+  await renderStatusTable();
+  monitorInterval = setInterval(async () => {
+    await renderStatusGrid();
+    await renderStatusTable();
   }, 2000);
 });
 

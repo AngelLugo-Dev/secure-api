@@ -1,20 +1,24 @@
-// Constantes y selectores
+// src/script.js
+
 const API_URL = "https://68bb0de484055bce63f104b3.mockapi.io/api/v1/Proyecto1";
+
+// Selectores para la página de Administración
 const deviceForm = document.getElementById("deviceForm");
 const deviceList = document.getElementById("deviceList");
-const statusGrid = document.getElementById("statusGrid");
-const statusTableBody = document.getElementById("statusTableBody");
 const actuatorControls = document.getElementById("actuatorControls");
 
-// Función para generar una IP aleatoria (simulando Faker.js)
+// Selectores para la página de Monitoreo
+const statusGrid = document.getElementById("statusGrid");
+const statusTableBody = document.getElementById("statusTableBody");
+
+let monitorInterval = null;
+
+// Funciones de API
 function generateRandomIP() {
   const octet = () => Math.floor(Math.random() * 256);
   return `${octet()}.${octet()}.${octet()}.${octet()}`;
 }
 
-// Funciones para interactuar con la API
-// ---
-// CRUD: CREAR dispositivo
 async function createDevice(device) {
   try {
     const response = await fetch(API_URL, {
@@ -31,7 +35,6 @@ async function createDevice(device) {
   }
 }
 
-// CRUD: LEER (obtener todos los dispositivos)
 async function getDevices() {
   try {
     const response = await fetch(API_URL);
@@ -43,7 +46,6 @@ async function getDevices() {
   }
 }
 
-// CRUD: ACTUALIZAR dispositivo
 async function updateDevice(id, data) {
   try {
     const response = await fetch(`${API_URL}/${id}`, {
@@ -60,7 +62,6 @@ async function updateDevice(id, data) {
   }
 }
 
-// CRUD: BORRAR dispositivo
 async function deleteDevice(id) {
   try {
     const response = await fetch(`${API_URL}/${id}`, {
@@ -73,14 +74,23 @@ async function deleteDevice(id) {
   }
 }
 
-// Funciones para renderizar la interfaz de usuario
-// ---
-// Renderiza la lista de dispositivos para administración
+// Funciones de renderizado
 async function renderDeviceList() {
+  if (!deviceList) return;
   const devices = await getDevices();
   if (!devices) return;
+
+  const uniqueDevices = [
+    ...new Map(
+      devices.map((item) => [
+        `${item.ubicacion}-${item.tipo_dispositivo}`,
+        item,
+      ])
+    ).values(),
+  ];
+
   deviceList.innerHTML = "";
-  devices.forEach((device) => {
+  uniqueDevices.forEach((device) => {
     const div = document.createElement("div");
     div.className =
       "flex justify-between items-center p-4 bg-gray-50 rounded-lg shadow-sm";
@@ -98,15 +108,58 @@ async function renderDeviceList() {
   renderActuatorControls();
 }
 
-// Renderiza el estado gráfico de los dispositivos
+async function renderActuatorControls() {
+  if (!actuatorControls) return;
+  const devices = await getDevices();
+  const actuators = devices.filter((d) => d.tipo_dispositivo === "actuador");
+  actuatorControls.innerHTML = "";
+  if (actuators.length === 0) {
+    actuatorControls.innerHTML =
+      '<p class="text-gray-500">No hay actuadores registrados.</p>';
+    return;
+  }
+  const uniqueActuators = [
+    ...new Map(actuators.map((item) => [item["ubicacion"], item])).values(),
+  ];
+
+  uniqueActuators.forEach((actuator) => {
+    const estadoActual = actuator.estado;
+    const nuevoEstado = estadoActual === "cerrada" ? "abrir" : "cerrar";
+    const botonColor =
+      estadoActual === "cerrada" ? "bg-red-500" : "bg-green-500";
+    const botonTexto =
+      estadoActual === "cerrada" ? "Abrir Puerta" : "Cerrar Puerta";
+    const controlDiv = document.createElement("div");
+    controlDiv.className =
+      "flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-sm";
+    controlDiv.innerHTML = `
+        <p class="font-semibold mb-2">${actuator.ubicacion} (${actuator.tipo_dispositivo})</p>
+        <button onclick="controlActuador('${actuator.ubicacion}', '${nuevoEstado}')" class="${botonColor} text-white p-2 rounded hover:bg-opacity-80 transition-opacity w-full">
+            ${botonTexto}
+        </button>
+    `;
+    actuatorControls.appendChild(controlDiv);
+  });
+}
+
 async function renderStatusGrid() {
+  if (!statusGrid) return;
   const devices = await getDevices();
   if (!devices) return;
+
+  const latestStatusByLocation = {};
+  devices
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .forEach((device) => {
+      if (!latestStatusByLocation[device.ubicacion]) {
+        latestStatusByLocation[device.ubicacion] = device;
+      }
+    });
+
   statusGrid.innerHTML = "";
-  devices.forEach((device) => {
+  Object.values(latestStatusByLocation).forEach((device) => {
     let statusColor = "bg-gray-400";
     let statusText = device.estado.toUpperCase();
-
     if (device.estado === "detectada" || device.estado === "abierta") {
       statusColor = "bg-red-500 animate-pulse";
       if (device.tipo_dispositivo === "puerta") statusText = "ABIERTA";
@@ -117,7 +170,6 @@ async function renderStatusGrid() {
       statusColor = "bg-green-500";
       if (device.tipo_dispositivo === "puerta") statusText = "CERRADA";
     }
-
     const card = document.createElement("div");
     card.className =
       "bg-white p-4 rounded-lg shadow-md flex items-center justify-between";
@@ -132,17 +184,15 @@ async function renderStatusGrid() {
   });
 }
 
-// Renderiza la tabla con los últimos 10 estados
 async function renderStatusTable() {
+  if (!statusTableBody) return;
   const devices = await getDevices();
   if (!devices) return;
   statusTableBody.innerHTML = "";
 
-  // Obtener los últimos 10 estados (o menos si hay menos de 10)
   const recentUpdates = devices
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10);
-
   recentUpdates.forEach((device) => {
     const row = document.createElement("tr");
     row.className = "hover:bg-gray-50 border-b";
@@ -160,119 +210,96 @@ async function renderStatusTable() {
   });
 }
 
-// NUEVA FUNCIÓN: Renderiza los controles de los actuadores
-async function renderActuatorControls() {
-  const devices = await getDevices();
-  const actuators = devices.filter((d) => d.tipo_dispositivo === "actuador");
-  actuatorControls.innerHTML = "";
-
-  if (actuators.length === 0) {
-    actuatorControls.innerHTML =
-      '<p class="text-gray-500">No hay actuadores registrados.</p>';
-    return;
-  }
-
-  actuators.forEach((actuator) => {
-    const estadoActual = actuator.estado;
-    const nuevoEstado = estadoActual === "cerrada" ? "abrir" : "cerrar";
-    const botonColor =
-      estadoActual === "cerrada" ? "bg-red-500" : "bg-green-500";
-    const botonTexto =
-      estadoActual === "cerrada" ? "Abrir Puerta" : "Cerrar Puerta";
-
-    const controlDiv = document.createElement("div");
-    controlDiv.className =
-      "flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-sm";
-    controlDiv.innerHTML = `
-        <p class="font-semibold mb-2">${actuator.ubicacion} (${actuator.tipo_dispositivo})</p>
-        <button onclick="controlActuador('${actuator.id}', '${nuevoEstado}')" class="${botonColor} text-white p-2 rounded hover:bg-opacity-80 transition-opacity w-full">
-            ${botonTexto}
-        </button>
-    `;
-    actuatorControls.appendChild(controlDiv);
-  });
-}
-
 // Manejadores de eventos
-// ---
-// Maneja el envío del formulario para crear un nuevo dispositivo
-deviceForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const tipo_dispositivo = document.getElementById("tipo_dispositivo").value;
-  const ubicacion = document.getElementById("ubicacion").value;
-
-  const newDeviceData = {
-    tipo_dispositivo,
-    ubicacion,
-    comando: tipo_dispositivo === "actuador" ? "cerrar" : "",
-    estado:
-      tipo_dispositivo === "presencia"
-        ? "no_detectada"
-        : tipo_dispositivo === "puerta"
-        ? "cerrada"
-        : "cerrada",
-    timestamp: new Date().toISOString(),
-    ip: generateRandomIP(),
-  };
-
-  await createDevice(newDeviceData);
-  await renderDeviceList();
-  deviceForm.reset();
-});
-
-// Maneja la acción de borrar un dispositivo
-async function handleDelete(id) {
+window.handleDelete = async (id) => {
   if (confirm("¿Estás seguro de que quieres borrar este dispositivo?")) {
     await deleteDevice(id);
     await renderDeviceList();
   }
-}
-
-// Lógica de monitoreo: Peticiones cada 2 segundos
-// ---
-// Renderiza el estado inicial al cargar la página
-window.onload = async () => {
-  await renderDeviceList();
-  await renderStatusGrid();
-  await renderStatusTable();
-  await renderActuatorControls();
-
-  // Configura la tasa de refresco de 2 segundos
-  setInterval(async () => {
-    await renderStatusGrid();
-    await renderStatusTable();
-    await renderActuatorControls();
-  }, 2000);
 };
 
-// Funciones de control del actuador (MODIFICADA para la dependencia del sensor)
-async function controlActuador(actuatorId, accion) {
+// ** LÓGICA DE VALIDACIÓN AÑADIDA **
+window.controlActuador = async (ubicacion, accion) => {
   const devices = await getDevices();
-  const actuator = devices.find((d) => d.id === actuatorId);
+  const actuator = devices.find(
+    (d) => d.tipo_dispositivo === "actuador" && d.ubicacion === ubicacion
+  );
+  const sensorPuerta = devices.find(
+    (d) => d.tipo_dispositivo === "puerta" && d.ubicacion === ubicacion
+  );
 
-  if (actuator) {
-    const ubicacion = actuator.ubicacion;
-    const sensorPuerta = devices.find(
-      (d) => d.tipo_dispositivo === "puerta" && d.ubicacion === ubicacion
+  if (actuator && sensorPuerta) {
+    await createDevice({
+      tipo_dispositivo: "actuador",
+      ubicacion: ubicacion,
+      comando: accion,
+      estado: accion === "cerrar" ? "cerrada" : "abierta",
+      timestamp: new Date().toISOString(),
+      ip: generateRandomIP(),
+    });
+
+    await createDevice({
+      tipo_dispositivo: "puerta",
+      ubicacion: ubicacion,
+      estado: accion === "cerrar" ? "cerrada" : "abierta",
+      timestamp: new Date().toISOString(),
+      ip: generateRandomIP(),
+    });
+
+    console.log(
+      `Acción '${accion}' registrada para los dispositivos en ${ubicacion}`
     );
-
-    if (sensorPuerta) {
-      // Actualiza el estado del actuador
-      await updateDevice(actuator.id, {
-        comando: accion,
-        estado: accion === "cerrar" ? "cerrada" : "abierta",
-        timestamp: new Date().toISOString(),
-      });
-
-      // Sincroniza el estado del sensor de puerta con el actuador
-      await updateDevice(sensorPuerta.id, {
-        estado: accion === "cerrar" ? "cerrada" : "abierta",
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      alert(
-        `No se encontró un sensor de puerta para la ${ubicacion}. La acción no se puede realizar.`
-      );
-    }
+    await renderDeviceList();
+  } else {
+    alert(
+      `No se encontró un actuador y/o sensor de puerta para la ubicación: ${ubicacion}.`
+    );
   }
+};
+
+if (deviceForm) {
+  deviceForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const tipo_dispositivo = document.getElementById("tipo_dispositivo").value;
+    const ubicacion = document.getElementById("ubicacion").value;
+    const newDeviceData = {
+      tipo_dispositivo,
+      ubicacion,
+      comando: tipo_dispositivo === "actuador" ? "cerrar" : "",
+      estado:
+        tipo_dispositivo === "presencia"
+          ? "no_detectada"
+          : tipo_dispositivo === "puerta"
+          ? "cerrada"
+          : "cerrada",
+      timestamp: new Date().toISOString(),
+      ip: generateRandomIP(),
+    };
+    await createDevice(newDeviceData);
+    await renderDeviceList();
+    deviceForm.reset();
+  });
 }
+
+// Lógica de carga inicial de la página
+window.onload = async () => {
+  const path = window.location.pathname;
+
+  if (path.endsWith("index.html") || path === "/") {
+    await renderDeviceList();
+  } else if (path.endsWith("monitoreo.html")) {
+    await renderStatusGrid();
+    await renderStatusTable();
+    monitorInterval = setInterval(async () => {
+      await renderStatusGrid();
+      await renderStatusTable();
+    }, 2000);
+  }
+};
+
+// Detener el intervalo cuando se sale de la página
+window.onbeforeunload = () => {
+  if (monitorInterval) {
+    clearInterval(monitorInterval);
+  }
+};
