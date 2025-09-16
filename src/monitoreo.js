@@ -38,27 +38,39 @@ async function renderStatusGrid() {
 
   statusGrid.innerHTML = "";
   Object.values(latestStatusByLocation).forEach((device) => {
-    let statusColor = "bg-gray-400";
+    let statusColor = "bg-slate-400";
+    let statusBgColor = "bg-slate-400/20";
     let statusText = device.estado.toUpperCase();
+
     if (device.estado === "detectada" || device.estado === "abierta") {
       statusColor = "bg-red-500 animate-pulse";
+      statusBgColor = "bg-red-500/20";
       if (device.tipo_dispositivo === "puerta") statusText = "ABIERTA";
     } else if (
       device.estado === "no_detectada" ||
       device.estado === "cerrada"
     ) {
       statusColor = "bg-green-500";
+      statusBgColor = "bg-green-500/20";
       if (device.tipo_dispositivo === "puerta") statusText = "CERRADA";
     }
+
     const card = document.createElement("div");
     card.className =
-      "bg-white p-4 rounded-lg shadow-md flex items-center justify-between";
+      "glass-effect rounded-xl p-4 flex items-center justify-between hover-glass";
     card.innerHTML = `
-        <div class="flex items-center">
-            <span class="dot ${statusColor}"></span>
-            <span class="ml-3 font-medium">${device.ubicacion}</span>
+      <div class="flex items-center space-x-3">
+        <span class="dot ${statusColor}"></span>
+        <div>
+          <h3 class="font-medium text-white">${device.ubicacion}</h3>
+          <p class="text-sm text-slate-400">${device.tipo_dispositivo}</p>
         </div>
-        <p class="text-sm font-bold text-gray-600">${statusText}</p>
+      </div>
+      <span class="px-3 py-1 text-sm rounded-full ${statusBgColor} ${
+      device.estado === "detectada" || device.estado === "abierta"
+        ? "text-red-300"
+        : "text-green-300"
+    }">${statusText}</span>
     `;
     statusGrid.appendChild(card);
   });
@@ -73,19 +85,34 @@ async function renderStatusTable() {
   const recentUpdates = devices
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10);
-  recentUpdates.forEach((device) => {
+  recentUpdates.forEach((device, index) => {
     const row = document.createElement("tr");
-    row.className = "hover:bg-gray-50 border-b";
+    const isDetected =
+      device.estado === "detectada" || device.estado === "abierta";
+    row.className = `border-b border-slate-700 hover:bg-navy-light/50 transition-colors ${
+      index === 0 ? "bg-navy-light/30" : ""
+    }`;
+
+    let statusClass = isDetected ? "text-red-300" : "text-green-300";
+    let statusText = device.estado.toUpperCase();
+    if (device.tipo_dispositivo === "puerta") {
+      statusText = isDetected ? "ABIERTA" : "CERRADA";
+    }
+
     row.innerHTML = `
-            <td class="py-3 px-6 text-left">${device.ubicacion} (${
-      device.tipo_dispositivo
-    })</td>
-            <td class="py-3 px-6 text-left">${device.estado}</td>
-            <td class="py-3 px-6 text-left">${new Date(
-              device.timestamp
-            ).toLocaleString()}</td>
-            <td class="py-3 px-6 text-left">${device.ip || "N/A"}</td>
-        `;
+      <td class="py-4 px-6 text-slate-300">${device.ubicacion} 
+        <span class="text-slate-400">(${device.tipo_dispositivo})</span>
+      </td>
+      <td class="py-4 px-6">
+        <span class="px-2 py-1 rounded-full text-sm ${statusClass} ${
+      isDetected ? "bg-red-500/20" : "bg-green-500/20"
+    }">${statusText}</span>
+      </td>
+      <td class="py-4 px-6 text-slate-400">${new Date(
+        device.timestamp
+      ).toLocaleString()}</td>
+      <td class="py-4 px-6 text-slate-400">${device.ip || "N/A"}</td>
+    `;
     statusTableBody.appendChild(row);
   });
 }

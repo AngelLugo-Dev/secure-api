@@ -93,14 +93,17 @@ async function renderDeviceList() {
   uniqueDevices.forEach((device) => {
     const div = document.createElement("div");
     div.className =
-      "flex justify-between items-center p-4 bg-gray-50 rounded-lg shadow-sm";
+      "glass-effect rounded-xl p-4 flex justify-between items-center hover-glass";
     div.innerHTML = `
         <div>
-            <p class="font-semibold">${device.ubicacion}</p>
-            <p class="text-sm text-gray-500">${device.tipo_dispositivo}</p>
+            <p class="font-medium text-white">${device.ubicacion}</p>
+            <p class="text-sm text-slate-400">${device.tipo_dispositivo}</p>
         </div>
         <div>
-            <button onclick="handleDelete('${device.id}')" class="bg-red-500 text-white p-2 rounded text-xs hover:bg-red-600">Borrar</button>
+            <button onclick="handleDelete('${device.id}')" 
+                    class="bg-red-500/90 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
+                Borrar
+            </button>
         </div>
     `;
     deviceList.appendChild(div);
@@ -115,7 +118,7 @@ async function renderActuatorControls() {
   actuatorControls.innerHTML = "";
   if (actuators.length === 0) {
     actuatorControls.innerHTML =
-      '<p class="text-gray-500">No hay actuadores registrados.</p>';
+      '<p class="text-slate-400">No hay actuadores registrados.</p>';
     return;
   }
   const uniqueActuators = [
@@ -126,15 +129,22 @@ async function renderActuatorControls() {
     const estadoActual = actuator.estado;
     const nuevoEstado = estadoActual === "cerrada" ? "abrir" : "cerrar";
     const botonColor =
-      estadoActual === "cerrada" ? "bg-red-500" : "bg-green-500";
+      estadoActual === "cerrada"
+        ? "bg-red-500/90 hover:bg-red-600"
+        : "bg-green-500/90 hover:bg-green-600";
     const botonTexto =
       estadoActual === "cerrada" ? "Abrir Puerta" : "Cerrar Puerta";
     const controlDiv = document.createElement("div");
     controlDiv.className =
-      "flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-sm";
+      "glass-effect rounded-xl p-6 flex flex-col items-center hover-glass";
     controlDiv.innerHTML = `
-        <p class="font-semibold mb-2">${actuator.ubicacion} (${actuator.tipo_dispositivo})</p>
-        <button onclick="controlActuador('${actuator.ubicacion}', '${nuevoEstado}')" class="${botonColor} text-white p-2 rounded hover:bg-opacity-80 transition-opacity w-full">
+        <div class="text-center mb-4">
+            <h3 class="font-medium text-white mb-1">${actuator.ubicacion}</h3>
+            <p class="text-sm text-slate-400">${actuator.tipo_dispositivo}</p>
+        </div>
+        <button 
+            onclick="controlActuador('${actuator.ubicacion}', '${nuevoEstado}')" 
+            class="${botonColor} text-white px-6 py-2 rounded-lg transition-colors w-full">
             ${botonTexto}
         </button>
     `;
