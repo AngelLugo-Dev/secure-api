@@ -41,19 +41,16 @@ async function renderStatusGrid() {
   Object.values(latestStatusByLocation).forEach((device) => {
     let statusColor = "bg-slate-400";
     let statusBgColor = "bg-slate-400/20";
-    let statusText = device.estado.toUpperCase();
 
     if (device.estado === "detectada" || device.estado === "abierta") {
       statusColor = "bg-red-500 animate-pulse";
       statusBgColor = "bg-red-500/20";
-      if (device.tipo_dispositivo === "puerta") statusText = "ABIERTA";
     } else if (
       device.estado === "no_detectada" ||
       device.estado === "cerrada"
     ) {
       statusColor = "bg-green-500";
       statusBgColor = "bg-green-500/20";
-      if (device.tipo_dispositivo === "puerta") statusText = "CERRADA";
     }
 
     const card = document.createElement("div");
@@ -67,11 +64,7 @@ async function renderStatusGrid() {
           <p class="text-sm text-slate-400">${device.tipo_dispositivo}</p>
         </div>
       </div>
-      <span class="px-3 py-1 text-sm rounded-full ${statusBgColor} ${
-      device.estado === "detectada" || device.estado === "abierta"
-        ? "text-red-300"
-        : "text-green-300"
-    }">${statusText}</span>
+      <span class="px-3 py-1 text-sm rounded-full ${statusBgColor}"></span>
     `;
     statusGrid.appendChild(card);
   });
