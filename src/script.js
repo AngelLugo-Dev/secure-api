@@ -272,16 +272,20 @@ if (deviceForm) {
     e.preventDefault();
     const tipo_dispositivo = document.getElementById("tipo_dispositivo").value;
     const ubicacion = document.getElementById("ubicacion").value;
+
+    // Validar que solo se puedan agregar puertas y actuadores
+    if (tipo_dispositivo === "presencia") {
+      alert(
+        "El tipo de dispositivo 'Sensor de Presencia' ya no está disponible."
+      );
+      return;
+    }
+
     const newDeviceData = {
       tipo_dispositivo,
       ubicacion,
       comando: tipo_dispositivo === "actuador" ? "cerrar" : "",
-      estado:
-        tipo_dispositivo === "presencia"
-          ? "no_detectada"
-          : tipo_dispositivo === "puerta"
-          ? "cerrada"
-          : "cerrada",
+      estado: "cerrada", // Por defecto, tanto puertas como actuadores empiezan cerrados
       timestamp: new Date().toISOString(),
       ip: generateRandomIP(),
     };

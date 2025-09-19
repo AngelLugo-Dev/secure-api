@@ -26,9 +26,10 @@ async function renderStatusGrid() {
   const devices = await getDevices();
   if (!devices) return;
 
-  // Obtener el estado más reciente de cada ubicación
+  // Filtrar solo dispositivos de tipo puerta y obtener el estado más reciente de cada ubicación
   const latestStatusByLocation = {};
   devices
+    .filter((device) => device.tipo_dispositivo === "puerta")
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .forEach((device) => {
       if (!latestStatusByLocation[device.ubicacion]) {
@@ -82,7 +83,9 @@ async function renderStatusTable() {
   if (!devices) return;
   statusTableBody.innerHTML = "";
 
+  // Filtrar solo los dispositivos de tipo puerta y obtener los últimos 10 cambios
   const recentUpdates = devices
+    .filter((device) => device.tipo_dispositivo === "puerta")
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10);
   recentUpdates.forEach((device, index) => {
